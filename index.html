@@ -522,10 +522,11 @@ var CONFIG = {
   venmo:      "",             // Venmo username, without @
   paypal:     "",           // paypal.me/<this>  (create free at paypal.me — hides your email)
   chimeSign:  "",                       // Chime $ChimeSign without $ — only Chime members can pay this way
+  paypalShop: "https://www.paypal.com/ncp/payment/U2K9QWHRCAJS2",                       // PayPal payment-link page listing all services
   stripeLink: "",                       // optional: one Stripe Payment Link URL (customer enters amount)
   formspree:  "",                       // optional: Formspree form ID, e.g. "xayzabcd" — only works on your own hosted site
   uploadLink: "https://www.dropbox.com/request/hbjvblvcclmgpjiroklg",                       // Dropbox File Request link for client photos/videos
-  payNote:    "I accept PayPal, plus Chime for Chime members. After you send your order, I'll text you a secure payment link for {amount}."
+  payNote:    "Chime members can also pay by Chime; text me for my $ChimeSign."
 };
 
 /* ===== Catalog — edit prices here ===== */
@@ -649,7 +650,7 @@ $("#orderForm").addEventListener("submit",function(e){
     v("details")
   ];
   var text=lines.join("\n");
-  lastOrder={id:id,text:text,due:c.due,total:c.total,item:c.item.name};
+  lastOrder={id:id,text:text,due:c.due,total:c.total,item:c.item.name,addons:c.addons.map(function(a){return a.name})};
   showConfirm(lastOrder);
   if(CONFIG.formspree){
     fetch("https://formspree.io/f/"+encodeURIComponent(CONFIG.formspree),{
@@ -681,9 +682,11 @@ function showConfirm(o){
   if(isSet(CONFIG.cashtag)) p.push('<a class="btn" href="https://cash.app/$'+encodeURIComponent(CONFIG.cashtag)+'/'+amt+'" target="_blank" rel="noopener">Cash App '+money(amt)+'</a>');
   if(isSet(CONFIG.paypal)) p.push('<a class="btn" href="https://paypal.me/'+encodeURIComponent(CONFIG.paypal)+'/'+amt+'USD" target="_blank" rel="noopener">PayPal '+money(amt)+'</a>');
   if(isSet(CONFIG.venmo)) p.push('<a class="btn" href="https://venmo.com/u/'+encodeURIComponent(CONFIG.venmo)+'" target="_blank" rel="noopener">Venmo @'+esc(CONFIG.venmo)+'</a>');
+  if(CONFIG.paypalShop) p.push('<a class="btn hot" href="'+esc(CONFIG.paypalShop)+'" target="_blank" rel="noopener">Pay '+money(amt)+' with PayPal</a>');
   if(CONFIG.stripeLink) p.push('<a class="btn" href="'+esc(CONFIG.stripeLink)+'" target="_blank" rel="noopener">Pay by card</a>');
   if(CONFIG.chimeSign) p.push('<div class="btn alt" style="pointer-events:none">Chime: $'+esc(CONFIG.chimeSign)+'</div>');
-  $("#payBtns").innerHTML = p.join('') + (CONFIG.payNote ? '<p class="fine" style="grid-column:1/-1">'+esc(CONFIG.payNote).replace('{amount}',money(amt))+'</p>' : '');
+  var shopNote = CONFIG.paypalShop ? '<p class="fine" style="grid-column:1/-1">On the PayPal page, choose <b>'+esc(o.item)+'</b>'+(o.addons&&o.addons.length?' plus <b>'+esc(o.addons.join(', '))+'</b>':'')+(o.total>=DEPOSIT_THRESHOLD?' (the <b>Deposit</b> item)':'')+'. After paying, text or email me your order number '+esc(o.id)+' so I can match your payment.</p>' : '';
+  $("#payBtns").innerHTML = p.join('') + shopNote + (CONFIG.payNote ? '<p class="fine" style="grid-column:1/-1">'+esc(CONFIG.payNote).replace('{amount}',money(amt))+'</p>' : '');
   document.getElementById("confirm").scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("#copyBtn").addEventListener("click",function(){
