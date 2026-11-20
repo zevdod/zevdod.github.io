@@ -438,8 +438,9 @@ footer{background:#0b0b0b;color:#8f897d;font-size:13px;padding:28px 0 100px}
         <div><label for="f_date">Needed by <small>(optional)</small></label><input id="f_date" name="deadline" type="date"></div>
       </div>
       <div>
-        <label for="f_assets">Logo / photos <small>(optional)</small></label>
-        <input id="f_assets" name="assets" placeholder="Paste a link, or note “I'll send by DM/email”">
+        <label for="f_assets">Logo, photos or videos <small>(optional)</small></label>
+        <input id="f_assets" name="assets" placeholder="Describe your files, e.g. “logo + 3 food photos”">
+        <p class="fine" id="uploadHint" style="margin-top:6px"></p>
       </div>
       <div class="total" aria-live="polite">
         <div><small>Order total</small><div class="n" id="totalNum">$0</div></div>
@@ -462,7 +463,12 @@ footer{background:#0b0b0b;color:#8f897d;font-size:13px;padding:28px 0 100px}
         <a class="btn alt" id="dmBtn" href="#" rel="noopener">DM on Instagram</a>
       </div>
       <p class="fine" id="sendNote"></p>
-      <p class="paytitle">Step 2 — Pay <span id="payAmt"></span> to lock in your spot.</p>
+      <div id="uploadStep" style="display:none">
+        <p class="paytitle">Step 2 — Upload your logo, photos or videos.</p>
+        <p class="fine">No account needed. When the upload page asks for your name, type your name followed by your order number <b class="oid3"></b> so I can match your files.</p>
+        <div class="btns"><a class="btn alt" id="uploadBtn2" href="#" target="_blank" rel="noopener">Upload files</a></div>
+      </div>
+      <p class="paytitle"><span id="payStepNum">Step 2</span> — Pay <span id="payAmt"></span> to lock in your spot.</p>
       <p class="fine">Put your order number <b id="oid2"></b> in the payment note.</p>
       <div class="btns" id="payBtns"></div>
       <p class="fine">You'll get a confirmation message once payment is matched to your order, usually within an hour during business hours.</p>
@@ -518,6 +524,7 @@ var CONFIG = {
   chimeSign:  "",                       // Chime $ChimeSign without $ — only Chime members can pay this way
   stripeLink: "",                       // optional: one Stripe Payment Link URL (customer enters amount)
   formspree:  "",                       // optional: Formspree form ID, e.g. "xayzabcd" — only works on your own hosted site
+  uploadLink: "",                       // Dropbox File Request link for client photos/videos
   payNote:    "I accept PayPal, plus Chime for Chime members. After you send your order, I'll text you a secure payment link for {amount}."
 };
 
@@ -666,6 +673,10 @@ function showConfirm(o){
   sm.style.display=isSet(CONFIG.phone)?"":"none"; sm.href="sms:"+CONFIG.phone+"&body="+body;
   dm.style.display=isSet(CONFIG.instagram)?"":"none"; dm.href="https://ig.me/m/"+CONFIG.instagram;
   $("#sendNote").textContent = "Email: "+CONFIG.email+(isSet(CONFIG.phone)?" · Text: "+fmtPhone(CONFIG.phone):"")+"."+(isSet(CONFIG.instagram)?" For Instagram, tap Copy first, then paste in the DM.":"");
+  var up=!!CONFIG.uploadLink;
+  $("#uploadStep").style.display=up?"":"none";
+  if(up){$("#uploadBtn2").href=CONFIG.uploadLink; document.querySelectorAll(".oid3").forEach(function(e){e.textContent=o.id});}
+  $("#payStepNum").textContent=up?"Step 3":"Step 2";
   var amt=o.due, note=encodeURIComponent(o.id), p=[];
   if(isSet(CONFIG.cashtag)) p.push('<a class="btn" href="https://cash.app/$'+encodeURIComponent(CONFIG.cashtag)+'/'+amt+'" target="_blank" rel="noopener">Cash App '+money(amt)+'</a>');
   if(isSet(CONFIG.paypal)) p.push('<a class="btn" href="https://paypal.me/'+encodeURIComponent(CONFIG.paypal)+'/'+amt+'USD" target="_blank" rel="noopener">PayPal '+money(amt)+'</a>');
@@ -698,6 +709,9 @@ if(isSet(CONFIG.phone)) cl.push(['☎','Text or call',fmtPhone(CONFIG.phone),'sm
 $("#contactList").innerHTML=cl.map(function(c){return '<a class="clink" href="'+esc(c[3])+'" target="_blank" rel="noopener"><i>'+esc(c[0])+'</i><div><b>'+esc(c[1])+'</b><small>'+esc(c[2])+'</small></div></a>'}).join('');
 
 $("#yr").textContent=new Date().getFullYear();
+$("#uploadHint").innerHTML = CONFIG.uploadLink
+  ? 'You\'ll get an <b>Upload files</b> button after you submit, or <a href="'+esc(CONFIG.uploadLink)+'" target="_blank" rel="noopener">upload now</a>. Photos and videos up to 2 GB each.'
+  : 'After you submit, text your files to '+esc(fmtPhone(CONFIG.phone))+' or email them to '+esc(CONFIG.email)+'.';
 if(!isSet(CONFIG.email)) $("#setup").classList.add("show");
 calc();
 /* hide floating button while the order form or contact section is on screen */
